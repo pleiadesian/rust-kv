@@ -7,15 +7,15 @@ impl KvStore {
         panic!("Not implemented");
     }
 
-    pub fn set(&mut self) {
+    pub fn set(&mut self, key: String, val: String) {
         panic!("Not implemented");
     }
 
-    pub fn get(&self) {
+    pub fn get(&self, key: String) -> Option<String> {
         panic!("Not implemented");
     }
 
-    pub fn remove(&mut self) {
+    pub fn remove(&mut self, key: String) {
         panic!("Not implemented");
     }
 }
