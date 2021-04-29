@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 /// `KvStore` stores key-value pairs
-/// 
+///
 /// Example:
-/// 
+///
 /// ```rust
 /// # use kvs::KvStore;
 /// let mut store = KvStore::new();
@@ -11,6 +11,7 @@ use std::collections::HashMap;
 /// let value = store.get("key1".to_owned());
 /// assert_eq!(value, Some("value1".to_owned()))
 /// ```
+#[derive(Default)]
 pub struct KvStore {
     kv: HashMap<String, String>,
 }
@@ -18,9 +19,7 @@ pub struct KvStore {
 impl KvStore {
     /// Create `KvStore`
     pub fn new() -> KvStore {
-        KvStore {
-            kv: HashMap::new(),
-        }
+        KvStore { kv: HashMap::new() }
     }
 
     /// Set a key-value pair
@@ -29,7 +28,7 @@ impl KvStore {
     }
 
     /// Get value by key
-    /// 
+    ///
     /// Return `None` if key does not exists
     pub fn get(&self, key: String) -> Option<String> {
         self.kv.get(&key).cloned()
