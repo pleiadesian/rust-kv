@@ -4,10 +4,10 @@ use std::env;
 use std::process::exit;
 
 fn main() {
-    let matches = App::new("kvs")
+    let matches = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
-        .author("Zulai Wang <wangzl31@outlook.com>")
-        .about("A simple key-value store")
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .about(env!("CARGO_PKG_DESCRIPTION"))
         .arg(
             Arg::with_name("config")
                 .short("c")
@@ -54,11 +54,13 @@ fn main() {
                 ),
         )
         .subcommand(
-            SubCommand::with_name("rm").about("Remove a key-value pair").arg(
-                Arg::with_name("KEY")
-                    .help("The string of the key")
-                    .required(true),
-            ),
+            SubCommand::with_name("rm")
+                .about("Remove a key-value pair")
+                .arg(
+                    Arg::with_name("KEY")
+                        .help("The string of the key")
+                        .required(true),
+                ),
         )
         .get_matches();
 
