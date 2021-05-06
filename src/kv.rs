@@ -1,4 +1,8 @@
 use std::collections::HashMap;
+use std::path::{Path};
+
+/// Result type
+pub type Result<T> = std::result::Result<T, i32>;
 
 /// `KvStore` stores key-value pairs
 ///
@@ -23,19 +27,26 @@ impl KvStore {
     }
 
     /// Set a key-value pair
-    pub fn set(&mut self, key: String, val: String) {
+    pub fn set(&mut self, key: String, val: String) -> Result<()> {
         self.kv.insert(key, val);
+        Ok(())
     }
 
     /// Get value by key
     ///
     /// Return `None` if key does not exists
-    pub fn get(&self, key: String) -> Option<String> {
-        self.kv.get(&key).cloned()
+    pub fn get(&self, key: String) -> Result<Option<String>> {
+        Ok(self.kv.get(&key).cloned())
     }
 
     /// Remove a key-value pair
-    pub fn remove(&mut self, key: String) {
+    pub fn remove(&mut self, key: String) -> Result<()> {
         self.kv.remove(&key);
+        Ok(())
+    }
+
+    /// TODO
+    pub fn open(_: &Path) -> Result<KvStore> {
+        Ok(KvStore::new())
     }
 }
