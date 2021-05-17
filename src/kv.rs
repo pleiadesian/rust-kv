@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use std::path::{Path};
-
-/// Result type
-pub type Result<T> = std::result::Result<T, i32>;
+use crate::Result;
 
 /// `KvStore` stores key-value pairs
 ///

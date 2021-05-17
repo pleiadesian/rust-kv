@@ -1,6 +1,7 @@
 use std::env;
 use std::process::exit;
 use structopt::StructOpt;
+use kvs::Result;
 
 #[derive(StructOpt)]
 #[structopt(name = env!("CARGO_PKG_NAME"), version = env!("CARGO_PKG_VERSION"), author = env!("CARGO_PKG_AUTHORS"), about = env!("CARGO_PKG_DESCRIPTION"))]
@@ -16,7 +17,7 @@ enum Command {
     Rm { _key: String },
 }
 
-fn main() {
+fn main() -> Result<()> {
     let opt = Opt::from_args();
     match opt.cmd {
         Command::Get { _key } => {
