@@ -1,8 +1,8 @@
+use kvs::{KvStore, Result};
 use std::env;
+use std::path::Path;
 use std::process::exit;
 use structopt::StructOpt;
-use std::path::Path;
-use kvs::{KvStore, Result};
 
 #[derive(StructOpt)]
 #[structopt(name = env!("CARGO_PKG_NAME"), version = env!("CARGO_PKG_VERSION"), author = env!("CARGO_PKG_AUTHORS"), about = env!("CARGO_PKG_DESCRIPTION"))]
@@ -13,24 +13,23 @@ struct Opt {
 
 #[derive(StructOpt)]
 enum Command {
-    Get { _key: String },
-    Set { _key: String, _value: String },
-    Rm { _key: String },
+    Get { key: String },
+    Set { key: String, value: String },
+    Rm { key: String },
 }
 
 fn main() -> Result<()> {
     let kvpath = Path::new("/tmp/rust-kv");
     let opt = Opt::from_args();
     match opt.cmd {
-        Command::Get { _key } => {
-            
-        }
-        Command::Set { _key, _value } => {            
+        Command::Get { key: key } => {}
+        Command::Set { key: key, value: value } => {
             let mut store = KvStore::open(kvpath)?;
-            store.set(_key, _value)?;
+            store.set(key, value)?;
         }
-        Command::Rm { _key } => {
-
+        Command::Rm { key: key } => {
+            let mut store = KvStore::open(kvpath)?;
+            store.remove(key)?;
         }
     }
     Ok(())

@@ -1,10 +1,9 @@
 use crate::Result;
-use std::collections::HashMap;
-use std::fs::{self, File};
-use std::io::{BufReader, BufWriter};
-use std::path::Path;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json;
+use std::fs::{self, File, OpenOptions};
+use std::io::{BufReader, BufWriter, Write};
+use std::path::Path;
 
 /// `KvStore` stores key-value pairs
 ///
@@ -18,16 +17,16 @@ use serde_json;
 /// assert_eq!(value, Some("value1".to_owned()))
 /// ```
 pub struct KvStore {
-    // kv: HashMap<String, String>,
     buf_writer: BufWriter<File>,
+    buf_reader: BufReader<File>,
 }
 
 impl KvStore {
     /// Set a key-value pair
     pub fn set(&mut self, key: String, val: String) -> Result<()> {
-        // self.kv.insert(key, val);
-        let command = Command::Set { key: key, val: val };
-        self.buf_writer.write(command.serialize());
+        let command = Command::Set { key, val };
+        serde_json::to_writer(&mut self.buf_writer, &command)?;
+        self.buf_writer.flush();
         Ok(())
     }
 
@@ -35,23 +34,30 @@ impl KvStore {
     ///
     /// Return `None` if key does not exists
     pub fn get(&self, key: String) -> Result<Option<String>> {
-        // Ok(self.kv.get(&key).cloned())
+        Ok(Some("None".to_owned()))
     }
 
     /// Remove a key-value pair
     pub fn remove(&mut self, key: String) -> Result<()> {
-        // self.kv.remove(&key);
-        // Ok(())
+        let command = Command::Remove { key };
+        let commands = serde_json::from_reader(&mut self.buf_reader)?;  // TODO: specify a type
+        Ok(())
     }
 
     /// Open a KV store from disk
     pub fn open(path: &Path) -> Result<KvStore> {
+        let logpath = path.join("kv.log");
         fs::create_dir_all(path)?;
-        let file = File::open(path.join("kv.log"))?;
-        serde_json::to_writer(self.buf_writer);
+        let file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(&logpath)?;
         let mut buf_writer = BufWriter::new(file);
+        let file = OpenOptions::new().read(true).open(&logpath)?;
+        let mut buf_reader = BufReader::new(file);
         Ok(KvStore {
-            buf_writer: buf_writer,
+            buf_writer,
+            buf_reader,
         })
     }
 }
