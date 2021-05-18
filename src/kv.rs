@@ -1,6 +1,10 @@
-use std::collections::HashMap;
-use std::path::{Path};
 use crate::Result;
+use std::collections::HashMap;
+use std::fs::{self, File};
+use std::io::{BufReader, BufWriter};
+use std::path::Path;
+use serde::{Serialize, Deserialize};
+use serde_json;
 
 /// `KvStore` stores key-value pairs
 ///
@@ -13,20 +17,17 @@ use crate::Result;
 /// let value = store.get("key1".to_owned());
 /// assert_eq!(value, Some("value1".to_owned()))
 /// ```
-#[derive(Default)]
 pub struct KvStore {
-    kv: HashMap<String, String>,
+    // kv: HashMap<String, String>,
+    buf_writer: BufWriter<File>,
 }
 
 impl KvStore {
-    /// Create `KvStore`
-    pub fn new() -> KvStore {
-        KvStore { kv: HashMap::new() }
-    }
-
     /// Set a key-value pair
     pub fn set(&mut self, key: String, val: String) -> Result<()> {
-        self.kv.insert(key, val);
+        // self.kv.insert(key, val);
+        let command = Command::Set { key: key, val: val };
+        self.buf_writer.write(command.serialize());
         Ok(())
     }
 
@@ -34,17 +35,29 @@ impl KvStore {
     ///
     /// Return `None` if key does not exists
     pub fn get(&self, key: String) -> Result<Option<String>> {
-        Ok(self.kv.get(&key).cloned())
+        // Ok(self.kv.get(&key).cloned())
     }
 
     /// Remove a key-value pair
     pub fn remove(&mut self, key: String) -> Result<()> {
-        self.kv.remove(&key);
-        Ok(())
+        // self.kv.remove(&key);
+        // Ok(())
     }
 
-    /// TODO
-    pub fn open(_: &Path) -> Result<KvStore> {
-        Ok(KvStore::new())
+    /// Open a KV store from disk
+    pub fn open(path: &Path) -> Result<KvStore> {
+        fs::create_dir_all(path)?;
+        let file = File::open(path.join("kv.log"))?;
+        serde_json::to_writer(self.buf_writer);
+        let mut buf_writer = BufWriter::new(file);
+        Ok(KvStore {
+            buf_writer: buf_writer,
+        })
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+enum Command {
+    Set { key: String, val: String },
+    Remove { key: String },
 }
