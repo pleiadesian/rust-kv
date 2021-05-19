@@ -34,8 +34,39 @@ impl KvStore {
     /// Get value by key
     ///
     /// Return `None` if key does not exists
-    pub fn get(&self, key: String) -> Result<Option<String>> {
-        Ok(Some("None".to_owned()))
+    pub fn get(&mut self, key: String) -> Result<Option<String>> {
+        let lines = self.buf_reader.by_ref().lines();
+        let mut command_latest = Command::Set {
+            key: "".to_owned(),
+            val: "".to_owned(),
+        };
+        let mut found = false;
+        for line in lines {
+            let command_line: Command = serde_json::from_str(line?.as_str())?;
+            match command_line {
+                Command::Set { key, val} => {
+                    if key == key {
+                        command_latest = Command::Set { key, val };
+                        found = true;
+                    }
+                }
+                Command::Remove { key } => {
+                    if key == key {
+                        command_latest = Command::Remove { key };
+                        found = false;
+                    }
+                }
+            }
+        }
+        if found {
+            if let Command::Set { key, val } = command_latest {
+                Ok(Some(val))
+            } else {
+                unreachable!()
+            }
+        } else {
+            Ok(None)
+        }
     }
 
     /// Remove a key-value pair
