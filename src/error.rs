@@ -2,14 +2,18 @@ use failure::Fail;
 use serde_json;
 use std::io;
 
+/// Error type for KV store
 #[derive(Fail, Debug)]
 pub enum KvsError {
-    #[fail(display = "An error occurred")]
-    _Error,
+    /// IO error
     #[fail(display = "IoError occurred")]
     Io(#[fail(cause)] io::Error),
+    /// Serde error
     #[fail(display = "serde_json::Error occurred")]
     Serde(#[fail(cause)] serde_json::Error),
+    /// Key not found
+    #[fail(display = "Key not found")]
+    KeyNotFound,
 }
 
 impl From<io::Error> for KvsError {

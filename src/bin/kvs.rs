@@ -1,4 +1,4 @@
-use kvs::{KvStore, Result};
+use kvs::{KvStore, KvsError, Result};
 use std::env;
 use std::path::Path;
 use std::process::exit;
@@ -19,17 +19,28 @@ enum Command {
 }
 
 fn main() -> Result<()> {
-    let kvpath = Path::new("/tmp/rust-kv");
+    let current_dir = std::env::current_dir()?;
+    let kvpath = current_dir.as_path();
     let opt = Opt::from_args();
     match opt.cmd {
         Command::Get { key: key } => {}
-        Command::Set { key: key, value: value } => {
+        Command::Set {
+            key: key,
+            value: value,
+        } => {
             let mut store = KvStore::open(kvpath)?;
             store.set(key, value)?;
         }
         Command::Rm { key: key } => {
             let mut store = KvStore::open(kvpath)?;
-            store.remove(key)?;
+            match store.remove(key) {
+                Ok(()) => {}
+                Err(KvsError::KeyNotFound) => {
+                    println!("Key not found");
+                    exit(1);
+                }
+                Err(e) => return Err(e),
+            }
         }
     }
     Ok(())

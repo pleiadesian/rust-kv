@@ -1,8 +1,8 @@
-use crate::Result;
+use crate::{Result, KvsError};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs::{self, File, OpenOptions};
-use std::io::{BufReader, BufWriter, Write};
+use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::path::Path;
 
 /// `KvStore` stores key-value pairs
@@ -26,6 +26,7 @@ impl KvStore {
     pub fn set(&mut self, key: String, val: String) -> Result<()> {
         let command = Command::Set { key, val };
         serde_json::to_writer(&mut self.buf_writer, &command)?;
+        self.buf_writer.write(&[b'\n']);
         self.buf_writer.flush();
         Ok(())
     }
@@ -40,8 +41,37 @@ impl KvStore {
     /// Remove a key-value pair
     pub fn remove(&mut self, key: String) -> Result<()> {
         let command = Command::Remove { key };
-        let commands = serde_json::from_reader(&mut self.buf_reader)?;  // TODO: specify a type
-        Ok(())
+        let lines = self.buf_reader.by_ref().lines();
+        let mut command_latest = Command::Set {
+            key: "".to_owned(),
+            val: "".to_owned(),
+        };
+        let mut found = false;
+        for line in lines {
+            let command_line: Command = serde_json::from_str(line?.as_str())?;
+            match command_line {
+                Command::Set { key, val } => {
+                    if key == key {
+                        command_latest = Command::Set { key, val };
+                        found = true;
+                    }
+                }
+                Command::Remove { key } => {
+                    if key == key {
+                        command_latest = Command::Remove { key };
+                        found = false;
+                    }
+                }
+            }
+        }
+        if found {
+            serde_json::to_writer(&mut self.buf_writer, &command)?;
+            self.buf_writer.write(&[b'\n']);
+            self.buf_writer.flush();
+            Ok(())
+        } else {
+            Err(KvsError::KeyNotFound)
+        }
     }
 
     /// Open a KV store from disk
@@ -50,6 +80,7 @@ impl KvStore {
         fs::create_dir_all(path)?;
         let file = OpenOptions::new()
             .write(true)
+            .append(true)
             .create(true)
             .open(&logpath)?;
         let mut buf_writer = BufWriter::new(file);
