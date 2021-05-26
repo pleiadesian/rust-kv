@@ -1,8 +1,8 @@
-use crate::{Result, KvsError};
+use crate::{KvsError, Result};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs::{self, File, OpenOptions};
-use std::io::{BufRead, BufReader, BufWriter, Read, Write};
+use std::io::{BufRead, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
 /// `KvStore` stores key-value pairs
@@ -35,6 +35,7 @@ impl KvStore {
     ///
     /// Return `None` if key does not exists
     pub fn get(&mut self, key: String) -> Result<Option<String>> {
+        self.buf_reader.seek(SeekFrom::Start(0))?;
         let lines = self.buf_reader.by_ref().lines();
         let mut command_latest = Command::Set {
             key: "".to_owned(),
@@ -44,15 +45,15 @@ impl KvStore {
         for line in lines {
             let command_line: Command = serde_json::from_str(line?.as_str())?;
             match command_line {
-                Command::Set { key, val} => {
-                    if key == key {
-                        command_latest = Command::Set { key, val };
+                Command::Set { key: key_line, val } => {
+                    if key_line == key {
+                        command_latest = Command::Set { key: key_line, val };
                         found = true;
                     }
                 }
-                Command::Remove { key } => {
-                    if key == key {
-                        command_latest = Command::Remove { key };
+                Command::Remove { key: key_line } => {
+                    if key_line == key {
+                        command_latest = Command::Remove { key: key_line };
                         found = false;
                     }
                 }
@@ -71,7 +72,6 @@ impl KvStore {
 
     /// Remove a key-value pair
     pub fn remove(&mut self, key: String) -> Result<()> {
-        let command = Command::Remove { key };
         let lines = self.buf_reader.by_ref().lines();
         let mut command_latest = Command::Set {
             key: "".to_owned(),
@@ -81,21 +81,22 @@ impl KvStore {
         for line in lines {
             let command_line: Command = serde_json::from_str(line?.as_str())?;
             match command_line {
-                Command::Set { key, val } => {
-                    if key == key {
-                        command_latest = Command::Set { key, val };
+                Command::Set { key: key_line, val } => {
+                    if key_line == key {
+                        command_latest = Command::Set { key: key_line, val };
                         found = true;
                     }
                 }
-                Command::Remove { key } => {
-                    if key == key {
-                        command_latest = Command::Remove { key };
+                Command::Remove { key: key_line } => {
+                    if key_line == key {
+                        command_latest = Command::Remove { key: key_line };
                         found = false;
                     }
                 }
             }
         }
         if found {
+            let command = Command::Remove { key };
             serde_json::to_writer(&mut self.buf_writer, &command)?;
             self.buf_writer.write(&[b'\n']);
             self.buf_writer.flush();
