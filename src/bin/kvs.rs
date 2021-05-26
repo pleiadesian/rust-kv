@@ -1,6 +1,5 @@
 use kvs::{KvStore, KvsError, Result};
 use std::env;
-use std::path::Path;
 use std::process::exit;
 use structopt::StructOpt;
 
@@ -23,7 +22,7 @@ fn main() -> Result<()> {
     let kvpath = current_dir.as_path();
     let opt = Opt::from_args();
     match opt.cmd {
-        Command::Get { key: key } => {
+        Command::Get { key } => {
             let mut store = KvStore::open(kvpath)?;
             if let Some(value) = store.get(key)? {
                 println!("{}", value);
@@ -31,14 +30,11 @@ fn main() -> Result<()> {
                 println!("Key not found");
             }
         }
-        Command::Set {
-            key: key,
-            value: value,
-        } => {
+        Command::Set { key, value } => {
             let mut store = KvStore::open(kvpath)?;
             store.set(key, value)?;
         }
-        Command::Rm { key: key } => {
+        Command::Rm { key } => {
             let mut store = KvStore::open(kvpath)?;
             match store.remove(key) {
                 Ok(()) => {}
